@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum MeetingStatus {
+  detected
+  recording
+  processing
+  ready
+  failed
+}
+
+enum MeetingPlatform {
+  google_meet
+  microsoft_teams
+  zoom
+  discord
+  slack
+  unknown
+}
+
+enum PipelineStage {
+  audio_extraction
+  transcription
+  diarization
+  ocr
+  vision
+  timeline
+  summary
+  action_items
+  decisions
+  risks
+  questions
+  embeddings
+  storage
+}
+
+enum PipelineStageStatus {
+  pending
+  running
+  completed
+  failed
+  skipped
+}
+
+model Meeting {
+  id              String          @id @default(cuid())
+  title           String
+  platform        MeetingPlatform @default(unknown)
+  status          MeetingStatus   @default(detected)
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int?
+  recordingPath   String?
+  audioPath       String?
+  storageDir      String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  participants    Participant[]
+  transcriptSegs  TranscriptSegment[]
+  summary         MeetingSummary?
+  actionItems     ActionItem[]
+  decisions       Decision[]
+  risks           Risk[]
+  questions       Question[]
+  topics          Topic[]
+  timelineEvents  TimelineEvent[]
+  screenshots     Screenshot[]
+  ocrResults      OcrResult[]
+  visionAnalyses  VisionAnalysis[]
+  embeddings      Embedding[]
+  pipelineJobs    PipelineJob[]
+}
+
+model Participant {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  role      String?
+
+  @@index([meetingId])
+}
+
+model TranscriptSegment {
+  id           String  @id @default(cuid())
+  meetingId    String
+  meeting      Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  startMs      Int
+  endMs        Int
+  speakerLabel String?
+  text         String
+
+  @@index([meetingId])
+}
+
+model MeetingSummary {
+  id         String  @id @default(cuid())
+  meetingId  String  @unique
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  executive  String
+  detailed   String
+  rawJson    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ActionItem {
+  id        String    @id @default(cuid())
+  meetingId String
+  meeting   Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  assignee  String?
+  dueDate   DateTime?
+  completed Boolean   @default(false)
+
+  @@index([meetingId])
+}
+
+model Decision {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+
+  @@index([meetingId])
+}
+
+model Risk {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  severity  String?
+
+  @@index([meetingId])
+}
+
+model Question {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  text      String
+  answered  Boolean @default(false)
+
+  @@index([meetingId])
+}
+
+model Topic {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  name      String
+
+  @@index([meetingId])
+}
+
+model TimelineEvent {
+  id           String  @id @default(cuid())
+  meetingId    String
+  meeting      Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  timestampMs  Int
+  label        String
+  description  String?
+
+  @@index([meetingId])
+}
+
+model Screenshot {
+  id          String  @id @default(cuid())
+  meetingId   String
+  meeting     Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  timestampMs Int
+  filePath    String
+
+  ocrResults     OcrResult[]
+  visionAnalyses VisionAnalysis[]
+
+  @@index([meetingId])
+}
+
+model OcrResult {
+  id           String      @id @default(cuid())
+  meetingId    String
+  meeting      Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  screenshotId String?
+  screenshot   Screenshot? @relation(fields: [screenshotId], references: [id], onDelete: SetNull)
+  text         String
+  confidence   Float?
+
+  @@index([meetingId])
+}
+
+model VisionAnalysis {
+  id           String      @id @default(cuid())
+  meetingId    String
+  meeting      Meeting     @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  screenshotId String?
+  screenshot   Screenshot? @relation(fields: [screenshotId], references: [id], onDelete: SetNull)
+  description  String
+  detectedType String?
+  rawJson      String?
+
+  @@index([meetingId])
+}
+
+model Embedding {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  source    String
+  sourceId  String?
+  vectorJson String
+  text      String
+
+  @@index([meetingId])
+}
+
+model PipelineJob {
+  id          String              @id @default(cuid())
+  meetingId   String
+  meeting     Meeting             @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  stage       PipelineStage
+  status      PipelineStageStatus @default(pending)
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([meetingId])
+  @@unique([meetingId, stage])
+}

@@ -1,0 +1,22 @@
+{
+  "name": "meetingmind-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first Meeting Knowledge Engine",
+  "scripts": {
+    "postinstall": "pnpm --filter @meetingmind/shared build && pnpm --filter @meetingmind/ai-provider build",
+    "dev": "pnpm -r --parallel --filter @meetingmind/api --filter @meetingmind/desktop run dev",
+    "dev:api": "pnpm --filter @meetingmind/api dev",
+    "dev:desktop": "pnpm --filter @meetingmind/desktop dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "db:generate": "pnpm --filter @meetingmind/api prisma:generate",
+    "db:migrate": "pnpm --filter @meetingmind/api prisma:migrate",
+    "db:studio": "pnpm --filter @meetingmind/api prisma:studio"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
