@@ -64,4 +64,9 @@ export class StorageService implements OnModuleInit {
       screenshots: path.join(dir, MEETING_STORAGE_LAYOUT.screenshotsDir),
     };
   }
+
+  async removeMeetingDir(meetingId: string): Promise<void> {
+    const dir = this.meetingDir(meetingId);
+    await fs.rm(dir, { recursive: true, force: true });
+  }
 }

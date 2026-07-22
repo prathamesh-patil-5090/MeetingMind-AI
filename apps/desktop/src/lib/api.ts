@@ -93,6 +93,10 @@ export const api = {
     request<{ meetingId: string; status: string }>(`/meetings/${id}/process`, {
       method: 'POST',
     }),
+  deleteMeeting: (id: string) =>
+    request<{ ok: boolean; id: string }>(`/meetings/${id}`, {
+      method: 'DELETE',
+    }),
   pipelineStatus: (id: string) =>
     request<
       Array<{ stage: string; status: string; error: string | null }>

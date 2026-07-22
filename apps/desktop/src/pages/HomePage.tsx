@@ -18,6 +18,7 @@ export function HomePage() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function refresh(q?: string) {
     try {
@@ -37,6 +38,23 @@ export function HomePage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function deleteMeeting(id: string, title: string) {
+    const ok = window.confirm(
+      `Delete “${title}”?\n\nThis removes the report, transcript, and local recording files.`,
+    );
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      await api.deleteMeeting(id);
+      setMeetings((prev) => prev.filter((m) => m.id !== id));
+      setHits((prev) => (prev ? prev.filter((h) => h.meetingId !== id) : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -135,44 +153,87 @@ export function HomePage() {
           </EmptyCard>
         ) : (
           meetings.map((m) => (
-            <Link
+            <article
               key={m.id}
-              to={`/meetings/${m.id}`}
-              className="group flex gap-4 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
+              className="flex items-stretch gap-4 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]"
             >
-              <div className="flex h-[72px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#6b4eff] to-[#2a2150] text-white/80">
-                <span className="text-lg">▶</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold text-[var(--text)] group-hover:text-[var(--accent)]">
-                      {m.title}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-                      <StatusPill status={m.status} />
-                      <span>{formatMeetingDate(m.startedAt)}</span>
-                      {m.durationSeconds != null && (
-                        <span>{formatDuration(m.durationSeconds)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right text-xs text-[var(--text-muted)]">
-                    <div>{m._count?.transcriptSegs ?? 0} segments</div>
-                    <div>{m._count?.actionItems ?? 0} actions</div>
-                  </div>
+              <Link
+                to={`/meetings/${m.id}`}
+                className="flex min-w-0 flex-1 gap-4 outline-none"
+              >
+                <div className="flex h-[72px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#6b4eff] to-[#2a2150] text-white/85">
+                  <span className="text-lg" aria-hidden>
+                    ▶
+                  </span>
                 </div>
-                {m.summary?.executive && (
-                  <p className="mt-2 line-clamp-2 text-sm text-[var(--text-muted)]">
-                    {stripThinking(m.summary.executive)}
-                  </p>
-                )}
+                <div className="min-w-0 flex-1 py-0.5">
+                  <h2 className="truncate text-[15px] font-semibold text-[var(--text)] hover:text-[var(--accent)]">
+                    {m.title}
+                  </h2>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+                    <StatusPill status={m.status} />
+                    <span>{formatMeetingDate(m.startedAt)}</span>
+                    {m.durationSeconds != null && (
+                      <>
+                        <span className="text-[var(--border)]">·</span>
+                        <span>{formatDuration(m.durationSeconds)}</span>
+                      </>
+                    )}
+                    <span className="text-[var(--border)]">·</span>
+                    <span>
+                      {m._count?.transcriptSegs ?? 0} segments · {m._count?.actionItems ?? 0}{' '}
+                      actions
+                    </span>
+                  </div>
+                  {m.summary?.executive && (
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--text-muted)]">
+                      {stripThinking(m.summary.executive)}
+                    </p>
+                  )}
+                </div>
+              </Link>
+
+              <div className="flex shrink-0 flex-col items-end justify-between py-0.5">
+                <button
+                  type="button"
+                  title="Delete meeting"
+                  aria-label={`Delete ${m.title}`}
+                  disabled={deletingId === m.id}
+                  onClick={() => void deleteMeeting(m.id, m.title)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg)] text-[var(--text-muted)] transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                >
+                  {deletingId === m.id ? (
+                    <span className="text-xs font-semibold">…</span>
+                  ) : (
+                    <TrashIcon />
+                  )}
+                </button>
+                <Link
+                  to={`/meetings/${m.id}`}
+                  className="text-xs font-semibold text-[var(--accent)] hover:underline"
+                >
+                  Open →
+                </Link>
               </div>
-            </Link>
+            </article>
           ))
         )}
       </div>
     </div>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

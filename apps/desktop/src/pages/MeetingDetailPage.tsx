@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SpeakerAvatar } from '../components/SpeakerAvatar';
 import { StatusPill } from '../components/StatusPill';
 import {
@@ -26,11 +26,13 @@ const TABS: Array<{ id: TabId; label: string }> = [
 
 export function MeetingDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>('summary');
   const [mediaSrc, setMediaSrc] = useState<string | null>(null);
   const [reprocessing, setReprocessing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [playbackMs, setPlaybackMs] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const activeSegRef = useRef<HTMLDivElement | null>(null);
@@ -127,6 +129,22 @@ export function MeetingDetailPage() {
     }
   }
 
+  async function deleteMeeting() {
+    if (!meeting) return;
+    const ok = window.confirm(
+      `Delete “${meeting.title}”?\n\nThis removes the report, transcript, and local recording files.`,
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await api.deleteMeeting(meeting.id);
+      navigate('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setDeleting(false);
+    }
+  }
+
   if (error && !meeting) {
     return (
       <div className="p-8 text-sm text-[var(--danger)]">
@@ -188,14 +206,24 @@ export function MeetingDetailPage() {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            disabled={reprocessing || meeting.status === 'processing'}
-            onClick={() => void reprocess()}
-            className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
-          >
-            {reprocessing || meeting.status === 'processing' ? 'Processing…' : 'Re-run pipeline'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={reprocessing || meeting.status === 'processing'}
+              onClick={() => void reprocess()}
+              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              {reprocessing || meeting.status === 'processing' ? 'Processing…' : 'Re-run pipeline'}
+            </button>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => void deleteMeeting()}
+              className="rounded-xl border border-rose-200 bg-white px-3.5 py-2 text-sm font-medium text-rose-600 shadow-[var(--shadow-sm)] transition hover:bg-rose-50 disabled:opacity-50"
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
         </div>
       </header>
 

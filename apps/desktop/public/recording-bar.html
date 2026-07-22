@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetingMind Recording</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #0f1220;
+        --panel: #161a2b;
+        --panel-2: #1e2438;
+        --line: rgba(255, 255, 255, 0.1);
+        --text: #f5f7ff;
+        --muted: #9aa3bd;
+        --accent: #6b4eff;
+        --accent-2: #8b74ff;
+        --danger: #ff3b5c;
+        --warn: #ffb020;
+        --ok: #22c55e;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        font-family: Manrope, "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+      }
+      .shell {
+        height: 100%;
+        padding: 4px;
+        -webkit-app-region: drag;
+      }
+      .bar {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 10px 0 14px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%),
+          linear-gradient(135deg, #1a1440 0%, #161a2b 45%, #121526 100%);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow:
+          0 12px 32px rgba(8, 10, 24, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, var(--accent), #3d2bb3);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        box-shadow: 0 4px 12px rgba(107, 78, 255, 0.35);
+        flex-shrink: 0;
+      }
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+      }
+      .meta-top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .live {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #ffd0d8;
+      }
+      .live.paused {
+        color: #ffe3a8;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--danger);
+        box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.5);
+        animation: pulse 1.35s infinite;
+      }
+      .live.paused .dot {
+        background: var(--warn);
+        animation: none;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.55);
+        }
+        70% {
+          box-shadow: 0 0 0 7px rgba(255, 59, 92, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 59, 92, 0);
+        }
+      }
+      .timer {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.02em;
+      }
+      .hint {
+        font-size: 10px;
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        -webkit-app-region: no-drag;
+      }
+      button {
+        -webkit-app-region: no-drag;
+        appearance: none;
+        border: 0;
+        height: 36px;
+        min-width: 36px;
+        padding: 0 12px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.1s ease,
+          box-shadow 0.15s ease;
+      }
+      button:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      button svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      button.ghost span {
+        display: none;
+      }
+      button.muted-on {
+        background: rgba(255, 176, 32, 0.18);
+        border-color: rgba(255, 176, 32, 0.35);
+        color: #ffd889;
+      }
+      button.pause-on {
+        background: rgba(107, 78, 255, 0.22);
+        border-color: rgba(139, 116, 255, 0.4);
+      }
+      button.stop {
+        background: linear-gradient(135deg, #ff4d6d, #e11d48);
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(225, 29, 72, 0.35);
+        padding-inline: 14px;
+      }
+      button.stop:hover {
+        filter: brightness(1.06);
+      }
+      @media (min-width: 520px) {
+        button.ghost span {
+          display: inline;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="bar" id="bar">
+        <div class="brand">
+          <div class="logo">M</div>
+          <div class="meta">
+            <div class="meta-top">
+              <span class="live" id="status"><span class="dot" id="dot"></span>REC</span>
+              <span class="timer" id="timer">00:00</span>
+            </div>
+            <div class="hint" id="hint">Always on top · visible in recording</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="ghost" id="btnMute" title="Mute microphone">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                id="micIcon"
+                d="M12 3a3 3 0 0 1 3 3v6a3 3 0 1 1-6 0V6a3 3 0 0 1 3-3Zm7 9a7 7 0 0 1-14 0M12 19v2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span id="muteLabel">Mic</span>
+          </button>
+          <button type="button" class="ghost" id="btnPause" title="Pause / resume">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path id="pauseIcon" d="M7 5h3v14H7V5zm7 0h3v14h-3V5z" />
+            </svg>
+            <span id="pauseLabel">Pause</span>
+          </button>
+          <button type="button" class="ghost" id="btnShow" title="Show MeetingMind">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8l-4 3V7Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>App</span>
+          </button>
+          <button type="button" class="stop" id="btnStop" title="Stop and process">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+            <span>Stop</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const timerEl = document.getElementById('timer');
+      const statusEl = document.getElementById('status');
+      const hintEl = document.getElementById('hint');
+      const btnPause = document.getElementById('btnPause');
+      const btnMute = document.getElementById('btnMute');
+      const btnShow = document.getElementById('btnShow');
+      const btnStop = document.getElementById('btnStop');
+      const pauseLabel = document.getElementById('pauseLabel');
+      const muteLabel = document.getElementById('muteLabel');
+      const pauseIcon = document.getElementById('pauseIcon');
+
+      function pad(n) {
+        return String(n).padStart(2, '0');
+      }
+      function formatElapsed(total) {
+        const h = Math.floor(total / 3600);
+        const m = Math.floor((total % 3600) / 60);
+        const s = total % 60;
+        return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+      }
+
+      function render(state) {
+        const elapsed = state?.elapsed ?? 0;
+        const paused = Boolean(state?.paused);
+        const muted = Boolean(state?.muted);
+        timerEl.textContent = formatElapsed(elapsed);
+        statusEl.className = 'live' + (paused ? ' paused' : '');
+        statusEl.innerHTML =
+          '<span class="dot" id="dot"></span>' + (paused ? 'PAUSED' : 'REC');
+        hintEl.textContent = paused
+          ? 'Recording paused — resume anytime'
+          : 'Always on top · captured in your video';
+        pauseLabel.textContent = paused ? 'Resume' : 'Pause';
+        pauseIcon.setAttribute(
+          'd',
+          paused ? 'M8 5v14l11-7L8 5z' : 'M7 5h3v14H7V5zm7 0h3v14h-3V5z',
+        );
+        btnPause.classList.toggle('pause-on', paused);
+        muteLabel.textContent = muted ? 'Unmute' : 'Mic';
+        btnMute.classList.toggle('muted-on', muted);
+      }
+
+      window.meetingMind?.onRecordingBarState?.((state) => render(state));
+      render({ elapsed: 0, paused: false, muted: false });
+
+      btnPause.addEventListener('click', () =>
+        window.meetingMind?.recordingCommand?.('toggle-pause'),
+      );
+      btnMute.addEventListener('click', () =>
+        window.meetingMind?.recordingCommand?.('toggle-mute'),
+      );
+      btnShow.addEventListener('click', () =>
+        window.meetingMind?.recordingCommand?.('show-app'),
+      );
+      btnStop.addEventListener('click', () =>
+        window.meetingMind?.recordingCommand?.('stop'),
+      );
+    </script>
+  </body>
+</html>
