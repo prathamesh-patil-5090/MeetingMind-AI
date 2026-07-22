@@ -97,6 +97,17 @@ export const api = {
     request<{ ok: boolean; id: string }>(`/meetings/${id}`, {
       method: 'DELETE',
     }),
+  askMeeting: (
+    id: string,
+    body: {
+      question: string;
+      history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+    },
+  ) =>
+    request<{ answer: string; sources: string[] }>(`/meetings/${id}/ask`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   pipelineStatus: (id: string) =>
     request<
       Array<{ stage: string; status: string; error: string | null }>

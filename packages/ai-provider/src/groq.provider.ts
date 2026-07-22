@@ -223,7 +223,11 @@ export class GroqAIProvider implements AIProvider {
       input.temperature,
       input.maxTokens,
       input.route ?? 'chat',
-      { jsonMode: input.route === 'chat' || input.route === 'extract' },
+      {
+        jsonMode:
+          input.jsonMode ??
+          (input.route === 'chat' || input.route === 'extract' || input.route == null),
+      },
     );
   }
 

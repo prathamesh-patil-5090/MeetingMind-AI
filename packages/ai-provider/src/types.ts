@@ -51,6 +51,8 @@ export interface CompleteInput {
   maxTokens?: number;
   /** Multi-key segregation lane (Groq). */
   route?: 'chat' | 'extract' | 'general';
+  /** Force/disable JSON response_format (Groq). Default: on for chat/extract. */
+  jsonMode?: boolean;
 }
 
 export interface ChatInput {

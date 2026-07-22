@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SpeakerAvatar } from '../components/SpeakerAvatar';
 import { StatusPill } from '../components/StatusPill';
+import { MeetingAskPanel } from '../components/MeetingAskPanel';
 import {
   findActiveSegmentId,
   VideoWithCaptions,
@@ -15,13 +16,14 @@ import {
   stripThinking,
 } from '../lib/text';
 
-type TabId = 'summary' | 'transcript' | 'chapters' | 'insights';
+type TabId = 'summary' | 'transcript' | 'chapters' | 'insights' | 'ask';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'summary', label: 'Summary' },
   { id: 'transcript', label: 'Transcript' },
   { id: 'chapters', label: 'Chapters' },
   { id: 'insights', label: 'Insights' },
+  { id: 'ask', label: 'Ask AI' },
 ];
 
 export function MeetingDetailPage() {
@@ -510,6 +512,8 @@ export function MeetingDetailPage() {
               </ReportCard>
             </div>
           )}
+
+          {tab === 'ask' && <MeetingAskPanel meetingId={meeting.id} />}
         </section>
       </div>
     </div>
