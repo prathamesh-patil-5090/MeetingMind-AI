@@ -108,6 +108,32 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  askKnowledge: (body: {
+    question: string;
+    history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  }) =>
+    request<{ answer: string; citations: KnowledgeCitation[] }>('/knowledge/ask', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  exportMeeting: async (id: string, format: 'md' | 'json' = 'md') => {
+    const base = await getBaseUrl();
+    const response = await fetch(
+      `${base}/api/meetings/${id}/export?format=${format}`,
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Export failed (${response.status})`);
+    }
+    const blob = await response.blob();
+    const ext = format === 'json' ? 'json' : 'md';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meeting-${id}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
   pipelineStatus: (id: string) =>
     request<
       Array<{ stage: string; status: string; error: string | null }>
@@ -124,6 +150,13 @@ export const api = {
     >(`/search?q=${encodeURIComponent(q)}&limit=${limit}`),
   mediaUrl,
 };
+
+export interface KnowledgeCitation {
+  meetingId: string;
+  meetingTitle: string;
+  source: string;
+  snippet: string;
+}
 
 export interface MeetingDetail extends MeetingListItem {
   transcriptSegs: Array<{

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
+import { AskPage } from './pages/AskPage';
 import { HomePage } from './pages/HomePage';
 import { ImportPage } from './pages/ImportPage';
 import { MeetingDetailPage } from './pages/MeetingDetailPage';
@@ -10,6 +11,7 @@ export function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
+        <Route path="ask" element={<AskPage />} />
         <Route path="record" element={<RecordPage />} />
         <Route path="import" element={<ImportPage />} />
         <Route path="meetings/:id" element={<MeetingDetailPage />} />

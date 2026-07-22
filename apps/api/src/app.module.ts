@@ -6,6 +6,7 @@ import { MeetingsModule } from './meetings/meetings.module';
 import { MediaModule } from './media/media.module';
 import { PipelineModule } from './pipeline/pipeline.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 import { SearchModule } from './search/search.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -23,6 +24,7 @@ import { StorageModule } from './storage/storage.module';
     MeetingsModule,
     PipelineModule,
     SearchModule,
+    KnowledgeModule,
   ],
   controllers: [HealthController],
 })

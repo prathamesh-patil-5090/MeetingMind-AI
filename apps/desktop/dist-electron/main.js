@@ -1,6 +1,7 @@
 "use strict";
 const electron = require("electron");
 const child_process = require("child_process");
+const fs = require("fs");
 const util = require("util");
 const path = require("path");
 const execFileAsync = util.promisify(child_process.execFile);
@@ -14,14 +15,34 @@ let preferredCaptureSourceId = null;
 function preloadPath() {
   return path.join(__dirname, "preload.js");
 }
+function appIconPath() {
+  const dir = path.join(__dirname, "..");
+  const candidates = process.platform === "win32" ? [
+    path.join(dir, "resources/icon.ico"),
+    path.join(dir, "resources/icon.png"),
+    path.join(dir, "public/icon.png"),
+    path.join(dir, "dist/icon.png")
+  ] : [
+    path.join(dir, "resources/icon.png"),
+    path.join(dir, "public/icon.png"),
+    path.join(dir, "dist/icon.png")
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
 function createWindow() {
+  const icon = appIconPath();
   mainWindow = new electron.BrowserWindow({
     width: 1280,
     height: 840,
     minWidth: 960,
     minHeight: 640,
     title: "MeetingMind AI",
+    show: false,
+    maximizable: true,
+    fullscreenable: true,
     backgroundColor: "#f4f5f8",
+    autoHideMenuBar: true,
+    ...icon ? { icon } : {},
     webPreferences: {
       preload: preloadPath(),
       contextIsolation: true,
@@ -31,10 +52,13 @@ function createWindow() {
   });
   if (process.env.VITE_DEV_SERVER_URL) {
     void mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-    mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
     void mainWindow.loadFile(path.join(process.env.DIST, "index.html"));
   }
+  mainWindow.once("ready-to-show", () => {
+    mainWindow == null ? void 0 : mainWindow.maximize();
+    mainWindow == null ? void 0 : mainWindow.show();
+  });
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -54,7 +78,9 @@ function createRecordingBar() {
   const display = electron.screen.getPrimaryDisplay();
   const width = 560;
   const height = 68;
-  const x = Math.round(display.workArea.x + (display.workArea.width - width) / 2);
+  const x = Math.round(
+    display.workArea.x + (display.workArea.width - width) / 2
+  );
   const y = Math.round(display.workArea.y + 14);
   recordingBar = new electron.BrowserWindow({
     width,
@@ -187,7 +213,8 @@ function launchUrlForSourceName(name) {
   const n = name.toLowerCase();
   if (n.includes("chatgpt")) return "https://chatgpt.com";
   if (n.includes("claude")) return "https://claude.ai";
-  if (n.includes("gemini") || n.includes("google bard")) return "https://gemini.google.com";
+  if (n.includes("gemini") || n.includes("google bard"))
+    return "https://gemini.google.com";
   if (n.includes("notion")) return "https://www.notion.so";
   if (n.includes("slack")) return "https://app.slack.com";
   if (n.includes("zoom")) return "zoommtg://";
@@ -218,23 +245,29 @@ async function focusOrOpenCaptureSource(source) {
   return { ok: false, action: "none" };
 }
 electron.app.whenReady().then(() => {
-  electron.session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
-    const sources = await electron.desktopCapturer.getSources({
-      types: ["screen", "window"],
-      thumbnailSize: { width: 0, height: 0 },
-      fetchWindowIcons: false
-    });
-    const preferred = preferredCaptureSourceId && sources.find((s) => s.id === preferredCaptureSourceId) || sources.find((s) => s.id.startsWith("screen:")) || sources[0];
-    if (!preferred) {
-      callback({});
-      return;
+  electron.Menu.setApplicationMenu(null);
+  if (process.platform === "win32") {
+    electron.app.setAppUserModelId("com.meetingmind.ai");
+  }
+  electron.session.defaultSession.setDisplayMediaRequestHandler(
+    async (_request, callback) => {
+      const sources = await electron.desktopCapturer.getSources({
+        types: ["screen", "window"],
+        thumbnailSize: { width: 0, height: 0 },
+        fetchWindowIcons: false
+      });
+      const preferred = preferredCaptureSourceId && sources.find((s) => s.id === preferredCaptureSourceId) || sources.find((s) => s.id.startsWith("screen:")) || sources[0];
+      if (!preferred) {
+        callback({});
+        return;
+      }
+      callback({
+        video: preferred,
+        // Electron DisplayMediaRequestHandler audio loopback
+        audio: "loopback"
+      });
     }
-    callback({
-      video: preferred,
-      // Electron DisplayMediaRequestHandler audio loopback
-      audio: "loopback"
-    });
-  });
+  );
   electron.ipcMain.handle("app:getInfo", () => ({
     apiBaseUrl,
     version: electron.app.getVersion(),
@@ -269,7 +302,10 @@ electron.app.whenReady().then(() => {
   );
   electron.ipcMain.handle("recording-bar:show", (_evt, state) => {
     createRecordingBar();
-    sendToBar("recording-bar:state", state ?? { elapsed: 0, paused: false, muted: false });
+    sendToBar(
+      "recording-bar:state",
+      state ?? { elapsed: 0, paused: false, muted: false }
+    );
     return { ok: true };
   });
   electron.ipcMain.handle("recording-bar:update", (_evt, state) => {

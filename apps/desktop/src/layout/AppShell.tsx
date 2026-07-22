@@ -27,6 +27,10 @@ export function AppShell() {
             <NavIcon kind="library" />
             Meetings
           </NavLink>
+          <NavLink to="/ask" className={navItem}>
+            <NavIcon kind="ask" />
+            Ask Knowledge
+          </NavLink>
           <NavLink to="/record" className={navItem}>
             <NavIcon kind="record" />
             Record
@@ -49,7 +53,7 @@ export function AppShell() {
   );
 }
 
-function NavIcon({ kind }: { kind: 'library' | 'record' | 'import' }) {
+function NavIcon({ kind }: { kind: 'library' | 'record' | 'import' | 'ask' }) {
   if (kind === 'library') {
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -59,6 +63,19 @@ function NavIcon({ kind }: { kind: 'library' | 'record' | 'import' }) {
           strokeWidth="1.6"
         />
         <path d="M8 8h8M8 12h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === 'ask') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M5 12a7 7 0 1 1 3.2 5.8L5 19l.8-3.1A6.9 6.9 0 0 1 5 12Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path d="M9.5 11.5h5M9.5 14h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     );
   }

@@ -35,6 +35,7 @@ export function MeetingDetailPage() {
   const [mediaSrc, setMediaSrc] = useState<string | null>(null);
   const [reprocessing, setReprocessing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [playbackMs, setPlaybackMs] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const activeSegRef = useRef<HTMLDivElement | null>(null);
@@ -147,6 +148,18 @@ export function MeetingDetailPage() {
     }
   }
 
+  async function exportReport(format: 'md' | 'json') {
+    if (!meeting) return;
+    setExporting(true);
+    try {
+      await api.exportMeeting(meeting.id, format);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (error && !meeting) {
     return (
       <div className="p-8 text-sm text-[var(--danger)]">
@@ -209,6 +222,22 @@ export function MeetingDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => void exportReport('md')}
+              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              {exporting ? 'Exporting…' : 'Export .md'}
+            </button>
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => void exportReport('json')}
+              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              Export .json
+            </button>
             <button
               type="button"
               disabled={reprocessing || meeting.status === 'processing'}
