@@ -49,11 +49,12 @@ export class AudioExtractionWorker implements PipelineWorker {
     const audioMp3 = path.join(paths.dir, 'audio.mp3');
 
     try {
-      await this.ffmpeg.extractSpeechMp3(recordingPath, audioMp3);
+      const seekable = await this.ffmpeg.ensureSeekableRecording(recordingPath);
+      await this.ffmpeg.extractSpeechMp3(seekable, audioMp3);
       await this.prisma.meeting.update({
         where: { id: meetingId },
         data: {
-          recordingPath,
+          recordingPath: seekable,
           audioPath: audioMp3,
         },
       });

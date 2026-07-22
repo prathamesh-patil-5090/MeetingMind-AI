@@ -190,4 +190,83 @@ export class FfmpegService {
     );
     return results;
   }
+
+  /**
+   * MediaRecorder WebM often lacks a cue index, so HTML5 seeking fails even with HTTP Range.
+   * Remux with stream copy to rebuild the container index (fast, no re-encode).
+   */
+  async ensureSeekableRecording(inputPath: string): Promise<string> {
+    const ext = path.extname(inputPath).toLowerCase();
+    if (ext === '.mp4' || ext === '.mov' || ext === '.m4a' || ext === '.mp3') {
+      return inputPath;
+    }
+
+    const dir = path.dirname(inputPath);
+    const seekableWebm = path.join(dir, 'recording.seekable.webm');
+    const seekableMp4 = path.join(dir, 'recording.mp4');
+
+    if (await fileOk(seekableMp4)) return seekableMp4;
+    if (await fileOk(seekableWebm)) return seekableWebm;
+
+    try {
+      await execFileAsync(
+        this.getBinaryPath(),
+        ['-y', '-fflags', '+genpts', '-i', inputPath, '-c', 'copy', seekableWebm],
+        { windowsHide: true, maxBuffer: 10 * 1024 * 1024 },
+      );
+      if (await fileOk(seekableWebm)) {
+        this.logger.log(`Rewrote seekable WebM → ${seekableWebm}`);
+        return seekableWebm;
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Seekable WebM remux failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    // Fallback: re-encode to MP4 (slower, widely seekable in Chromium).
+    try {
+      await execFileAsync(
+        this.getBinaryPath(),
+        [
+          '-y',
+          '-i',
+          inputPath,
+          '-c:v',
+          'libx264',
+          '-preset',
+          'veryfast',
+          '-crf',
+          '23',
+          '-c:a',
+          'aac',
+          '-b:a',
+          '128k',
+          '-movflags',
+          '+faststart',
+          seekableMp4,
+        ],
+        { windowsHide: true, maxBuffer: 20 * 1024 * 1024 },
+      );
+      if (await fileOk(seekableMp4)) {
+        this.logger.log(`Re-encoded seekable MP4 → ${seekableMp4}`);
+        return seekableMp4;
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Seekable MP4 encode failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    return inputPath;
+  }
+}
+
+async function fileOk(filePath: string): Promise<boolean> {
+  try {
+    const stat = await fs.stat(filePath);
+    return stat.isFile() && stat.size > 0;
+  } catch {
+    return false;
+  }
 }

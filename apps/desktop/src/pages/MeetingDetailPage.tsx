@@ -226,33 +226,45 @@ export function MeetingDetailPage() {
               type="button"
               disabled={exporting}
               onClick={() => void exportReport('md')}
-              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+              title="Export Markdown"
+              aria-label="Export Markdown"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
             >
-              {exporting ? 'Exporting…' : 'Export .md'}
+              <MdIcon />
             </button>
             <button
               type="button"
               disabled={exporting}
               onClick={() => void exportReport('json')}
-              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+              title="Export JSON"
+              aria-label="Export JSON"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
             >
-              Export .json
+              <JsonIcon />
             </button>
             <button
               type="button"
               disabled={reprocessing || meeting.status === 'processing'}
               onClick={() => void reprocess()}
-              className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+              title={
+                reprocessing || meeting.status === 'processing'
+                  ? 'Processing…'
+                  : 'Re-run pipeline'
+              }
+              aria-label="Re-run pipeline"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[var(--text-muted)] shadow-[var(--shadow-sm)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
             >
-              {reprocessing || meeting.status === 'processing' ? 'Processing…' : 'Re-run pipeline'}
+              <RefreshIcon spinning={reprocessing || meeting.status === 'processing'} />
             </button>
             <button
               type="button"
               disabled={deleting}
               onClick={() => void deleteMeeting()}
-              className="rounded-xl border border-rose-200 bg-white px-3.5 py-2 text-sm font-medium text-rose-600 shadow-[var(--shadow-sm)] transition hover:bg-rose-50 disabled:opacity-50"
+              title={deleting ? 'Deleting…' : 'Delete'}
+              aria-label="Delete meeting"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-600 shadow-[var(--shadow-sm)] transition hover:bg-rose-50 disabled:opacity-50"
             >
-              {deleting ? 'Deleting…' : 'Delete'}
+              <TrashIcon />
             </button>
           </div>
         </div>
@@ -648,4 +660,86 @@ function PipelineStatus({ status }: { status: string }) {
           ? 'text-[var(--warning)]'
           : 'text-[var(--text-muted)]';
   return <span className={`text-xs font-semibold capitalize ${color}`}>{status}</span>;
+}
+
+function MdIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path
+        d="M8.5 16.5V11l2 3 2-3v5.5M15.5 11v5.5h2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function JsonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M8 4c-2 0-3 1.2-3 3v2.5c0 1-.6 1.5-1.5 1.5M8 20c-2 0-3-1.2-3-3v-2.5c0-1-.6-1.5-1.5-1.5M16 4c2 0 3 1.2 3 3v2.5c0 1 .6 1.5 1.5 1.5M16 20c2 0 3-1.2 3-3v-2.5c0-1 .6-1.5 1.5-1.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.5 9.5h1.2c.7 0 1.2.4 1.2 1.1v0c0 .6-.4 1-1 1.1l-1.2.2c-.7.1-1.2.5-1.2 1.2v0c0 .7.5 1.2 1.3 1.2h1.4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function RefreshIcon({ spinning }: { spinning?: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={spinning ? 'animate-spin' : undefined}
+    >
+      <path
+        d="M20 12a8 8 0 1 1-2.3-5.6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M20 5v5h-5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }

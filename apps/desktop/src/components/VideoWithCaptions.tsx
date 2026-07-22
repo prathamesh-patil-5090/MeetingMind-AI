@@ -97,7 +97,7 @@ export function VideoWithCaptions({
         src={mediaSrc}
         controls
         className="aspect-video w-full bg-black"
-        preload="metadata"
+        preload="auto"
         crossOrigin="anonymous"
       >
         {vttUrl && (
